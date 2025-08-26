@@ -1,6 +1,10 @@
 name: newrelic
 
 project_files:
-  - docker-compose.newrelic.yaml
+  - commands/web/newrelic
+  - web-build/Dockerfile.newrelic
+post_install_actions:
+  - chmod +x commands/web/newrelic
+  - echo "✅ DDEV New Relic add-on installed. Run 'ddev newrelic on' to enable."
 
 ddev_version_constraint: '>= v1.24.3'

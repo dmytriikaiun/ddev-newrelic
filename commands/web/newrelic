@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+
+## #ddev-generated: Remove this line to take over this script
+## Description: Enable or disable the New Relic PHP agent
+## Usage: newrelic on|off|enable|disable|status
+## Example: "ddev newrelic on", "ddev newrelic off", "ddev newrelic status"
+## ExecRaw: false
+## Flags: []
+## AutocompleteTerms: ["on","off","enable","disable","status"]
+
+MODS_AVAILABLE_INI_FILE="/etc/php/${DDEV_PHP_VERSION}/mods-available/newrelic.ini"
+
+function set_or_replace() {
+  local key="$1"
+  local value="$2"
+  if grep -q "^$key" "$MODS_AVAILABLE_INI_FILE"; then
+    sed -i "s|^$key.*|$key = \"$value\"|" "$MODS_AVAILABLE_INI_FILE"
+  else
+    echo "$key = \"$value\"" >> "$MODS_AVAILABLE_INI_FILE"
+  fi
+}
+
+function enable_newrelic {
+  if [ -z ${NEWRELIC_LICENSE_KEY} ] || [ -z ${NEWRELIC_APPNAME} ]; then
+    echo "NEWRELIC_LICENSE_KEY and NEWRELIC_APPNAME environment variables must be set" >&2
+    exit 1
+  fi
+  set_or_replace "newrelic.license" "${NEWRELIC_LICENSE_KEY}"
+  set_or_replace "newrelic.appname" "${NEWRELIC_APPNAME}"
+  phpdismod xhprof xdebug blackfire
+  phpenmod newrelic
+  sudo /etc/init.d/newrelic-daemon start
+  killall -USR2 php-fpm && killall -HUP nginx
+  echo "✅ Enabled New Relic PHP extension and started daemon"
+  exit
+}
+
+function disable_newrelic {
+  phpdismod newrelic
+  killall -USR2 php-fpm
+  sudo /etc/init.d/newrelic-daemon stop
+  echo "🚫 Disabled New Relic PHP extension and stopped daemon"
+  exit
+}
+
+function get_newrelic_status {
+  php -m | grep -q "newrelic" >/dev/null 2>&1
+  phpstatus=$?
+  if [ ${phpstatus} -eq 0 ]; then
+      echo "New Relic PHP extension enabled"
+  else
+      echo "New Relic PHP extension disabled"
+  fi
+
+  sudo /etc/init.d/newrelic-daemon status | grep "is running" >/dev/null 2>&1
+  daemonstatus=$?
+  if [ ${daemonstatus} -eq 0 ]; then
+    echo "New Relic daemon running"
+  else
+    echo "New Relic daemon not running"
+  fi
+}
+
+if [ $# -eq 0 ] ; then
+  enable_newrelic
+fi
+
+case $1 in
+  on|true|enable|start)
+    disable_xdebug
+    enable_newrelic
+    ;;
+  off|false|disable|stop)
+    disable_newrelic
+    ;;
+  status)
+    get_newrelic_status
+    ;;
+  *)
+    echo "Invalid argument: $1"
+    echo "Usage: ddev newrelic [on|off|status]"
+    ;;
+esac
