@@ -5,6 +5,10 @@
 
 # DDEV Newrelic
 
+- [Overview](#overview)
+- [Installation](#installation)
+- [Usage](#usage)
+
 ## Overview
 
 This add-on integrates Newrelic into your [DDEV](https://ddev.com/) project.
@@ -20,28 +24,18 @@ After installation, make sure to commit the `.ddev` directory to version control
 
 ## Usage
 
-| Command | Description |
-| ------- | ----------- |
-| `ddev describe` | View service status and used ports for Newrelic |
-| `ddev logs -s newrelic` | Check Newrelic logs |
-
-## Advanced Customization
-
-To change the Docker image:
-
-```bash
-ddev dotenv set .ddev/.env.newrelic --newrelic-docker-image="ddev/ddev-utilities:latest"
-ddev add-on get dmytriikaiun/ddev-newrelic
-ddev restart
-```
-
-Make sure to commit the `.ddev/.env.newrelic` file to version control.
-
-All customization options (use with caution):
-
-| Variable | Flag | Default |
-| -------- | ---- | ------- |
-| `NEWRELIC_DOCKER_IMAGE` | `--newrelic-docker-image` | `ddev/ddev-utilities:latest` |
+- Create a [New Relic](https://newrelic.com) account. A free account is limited in data ingestion;
+  see [New Relic pricing](https://newrelic.com/pricing).
+- From the New Relic's control panel, get the Licence key from your Account -> API Keys.<br>
+  Use the "Create a key" button and select `Ingest - Licence` as Key type.
+- Configure DDEV with the credentials,
+  `ddev config global --web-environment-add="NEWRELIC_LICENSE_KEY=<licence_key>, NEWRELIC_APPNAME=<appname>"`.
+  The `NEWRELIC_APPNAME` could be any alphanumeric string; New Relic will create a corresponding entity that can be
+  found in the UI.<br>
+  It’s easiest to do this globally, but you can do the same thing at the project level using
+  `ddev config --web-environment-add`. Or create any `.env` file in `.ddev` directory with the corresponding variables.
+- `ddev start`
+- `ddev newrelic on` to enable, `ddev newrelic off` to disable, `ddev newrelic status` to see status
 
 ## Credits
 
